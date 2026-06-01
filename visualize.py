@@ -2,7 +2,7 @@ from sinkhorn import sinkhorn
 import numpy as np
 import plotly.graph_objects as go
 
-def generateCircle(radius: float, n: int = 10**4) -> np.ndarray:
+def generateCircle(radius: float, n: int) -> np.ndarray:
     '''
     Randomly generate :n: points on the boundary of a circle in R^2
     '''
@@ -11,11 +11,11 @@ def generateCircle(radius: float, n: int = 10**4) -> np.ndarray:
     for _ in range(n):
         x = np.random.random() - 0.5
         y = np.random.random() - 0.5
-        norm = np.sqrt(x**2 + y**2) / radius
+        norm = np.sqrt((x**2 + y**2)) / radius
         result.append(np.array([x/norm, y/norm]))
     return np.array(result)
 
-def generateSquare(radius: float, n: int = 10**4) -> np.ndarray:
+def generateSquare(radius: float, n: int) -> np.ndarray:
     '''
     Randomly generate n points on the boundary of a square in R^2
     '''
@@ -26,7 +26,32 @@ def generateSquare(radius: float, n: int = 10**4) -> np.ndarray:
         norm = max(abs(x), abs(y)) / radius
         result.append(np.array([x/norm, y/norm]))
     return np.array(result)
+
+def generateSphere(radius: float, n: int) -> np.ndarray:
+    '''
+    Randomly generate :n: points on the boundary of a sphere in R^3
+    '''
+    result: list[np.ndarray] = []
+    for _ in range(n):
+        x = np.random.random() - 0.5
+        y = np.random.random() - 0.5
+        z = np.random.random() - 0.5
+        norm = np.sqrt(x**2 + y**2 + z**2) / radius
+        result.append(np.array([x/norm, y/norm, z/norm]))
+    return np.array(result)
     
+def generateCube(radius: float, n: int) -> np.ndarray:
+    '''
+    Randomly generate n points on the boundary of a cube in R^3
+    '''
+    result: list[np.ndarray] = []
+    for _ in range(n):
+        x = np.random.random() - 0.5
+        y = np.random.random() - 0.5
+        z = np.random.random() - 0.5
+        norm = max(abs(x), abs(y), abs(z)) / radius
+        result.append(np.array([x/norm, y/norm, z/norm]))
+    return np.array(result)
     
 
 def visualize2d(
@@ -87,7 +112,7 @@ def visualize2d(
                         x=pos[:,0],
                         y=pos[:,1],
                         mode="markers",
-                        marker=dict(size=10)
+                        marker=dict(size=2)
                     )
                 ],
                 name=str(frame)
@@ -100,14 +125,14 @@ def visualize2d(
         x=pos0[:,0],
         y=pos0[:,1],
         mode="markers",
-        marker=dict(size=10)
+        marker=dict(size=2)
     )
     
     source_cloud = go.Scatter(
         x=source_points[:,0],
         y=source_points[:,1],
         mode="markers",
-        marker=dict(size=15),
+        marker=dict(size=3),
         opacity=0.2,
         name="Source"
     )
@@ -116,7 +141,7 @@ def visualize2d(
         x=target_points[:,0],
         y=target_points[:,1],
         mode="markers",
-        marker=dict(size=15),
+        marker=dict(size=3),
         opacity=0.2,
         name="Target"
     )
@@ -141,7 +166,7 @@ def visualize2d(
                         args=[
                             None,
                             dict(
-                                frame=dict(duration=40, redraw=True),
+                                frame=dict(duration=10, redraw=True),
                                 transition=dict(duration=0),
                                 fromcurrent=True
                             )
@@ -164,7 +189,16 @@ def visualize2d(
             aspectmode="data"
         )
     )
+
+    import os.path
+    file_path = os.path.abspath(
+        os.path.join(
+            os.path.dirname(__file__),
+            'ot_animation.html'
+        )
+    )
     
+    fig.write_html(file_path)
     fig.show()
     
     
@@ -172,11 +206,11 @@ def visualize2d(
     
 
 if __name__ == "__main__":
-    n = 80
+    n = 1000
     circle_points = generateCircle(1, n)
     circle_weights = np.array([1/n]*n)
-    m = 70
+    m = 800
     square_points = generateSquare(1, m)
     square_weights = np.array([1/m]*m)
     
-    visualize2d(square_weights, circle_weights, square_points, circle_points, 0.6)
+    visualize2d(square_weights, circle_weights, square_points, circle_points, 0.2)
