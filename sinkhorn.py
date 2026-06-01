@@ -1,33 +1,35 @@
 import numpy as np
 
-def sinkhorn(K: np.ndarray, a: np.ndarray, b: np.ndarray, precision: float = 1e-4) -> tuple[np.ndarray, int]:
+def sinkhorn(kernel: np.ndarray, source_mass: np.ndarray, target_mass: np.ndarray, tolerance: float = 1e-6, eps: float = 1e-6) -> tuple[np.ndarray, int]:
     '''
-    Computes OT matrix P by finding u and v st P = diag(u) K diag(v)
+    Computes OT matrix P by finding u and v so that P = diag(u) K diag(v)
     '''
-    n, m = np.shape(K)
+    n, m = np.shape(kernel)
 
-    assert np.shape(a)[0] == n, "a or K is not of desired shape"
-    assert np.shape(b)[0] == m, "b or K is not of desired shape"
+    assert np.shape(source_mass)[0] == n, "source_mass or kernel is not of desired shape"
+    assert np.shape(target_mass)[0] == m, "target_mass or kernel is not of desired shape"
 
-    assert np.abs(np.sum(a) - 1) < 1e-6, "a should sum to 1"
-    assert np.abs(np.sum(b) - 1) < 1e-6, "b should sum to 1"
+    assert np.abs(np.sum(source_mass) - 1) < eps, "source_mass should sum to 1"
+    assert np.abs(np.sum(target_mass) - 1) < eps, "target_mass should sum to 1"
     
-    v = np.ones(m)
-    u = np.ones(n)
+    col_scaling = np.ones(m)
+    row_scaling = np.ones(n)
 
-    iter = 0
+    iteration = 0
     while True:
-        v_prev = v
-        u_prev = u
-        u = a / (K @ v)
-        v = b / (K.T @ u)
+        previous_col_scaling = col_scaling
+        previous_row_scaling = row_scaling
+        row_scaling = source_mass / (kernel @ col_scaling)
+        col_scaling = target_mass / (kernel.T @ row_scaling)
 
-        iter += 1
+        iteration += 1
 
-        if np.linalg.norm(v_prev - v) + np.linalg.norm(u_prev - u) < precision:
+        if np.linalg.norm(previous_col_scaling - col_scaling) + np.linalg.norm(previous_row_scaling - row_scaling) < tolerance:
             break
 
-    return np.diag(u) @ K @ np.diag(v), iter
+    transport = np.diag(row_scaling) @ kernel @ np.diag(col_scaling)
+    
+    return transport, iteration
 
 
 if __name__ == "__main__":
@@ -48,6 +50,11 @@ if __name__ == "__main__":
     gamma = 2
     K = np.exp(C / gamma)
 
-    res = sinkhorn(K, a, b)
-    print(res[0])
-    print(res[1])
+    P, i = sinkhorn(K, a, b)
+    print(P)
+    print(f"Took {i} iterations")
+    
+    print(np.sum(P, 1))
+    print(a)
+    print(np.sum(P, 0))
+    print(b)
