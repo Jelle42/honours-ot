@@ -1,6 +1,6 @@
 import numpy as np
 
-def sinkhorn(kernel: np.ndarray, source_mass: np.ndarray, target_mass: np.ndarray, tolerance: float = 1e-6, eps: float = 1e-6) -> tuple[np.ndarray, int]:
+def sinkhorn(kernel: np.ndarray, source_mass: np.ndarray, target_mass: np.ndarray, tolerance: float = 1e-6, eps: float = 1e-12) -> tuple[np.ndarray, int]:
     '''
     Computes OT matrix P by finding u and v so that P = diag(u) K diag(v)
     '''
