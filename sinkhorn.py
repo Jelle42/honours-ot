@@ -6,11 +6,14 @@ def sinkhorn(K: np.ndarray, a: np.ndarray, b: np.ndarray, precision: float = 1e-
     '''
     n, m = np.shape(K)
 
-    assert np.shape(a)[0] == m, "a or K is not of desired shape"
-    assert np.shape(b)[0] == n, "b or K is not of desired shap"
+    assert np.shape(a)[0] == n, "a or K is not of desired shape"
+    assert np.shape(b)[0] == m, "b or K is not of desired shape"
 
+    assert np.abs(np.sum(a) - 1) < 1e-6, "a should sum to 1"
+    assert np.abs(np.sum(b) - 1) < 1e-6, "b should sum to 1"
+    
     v = np.ones(m)
-    u = np.zeros(n)
+    u = np.ones(n)
 
     iter = 0
     while True:
@@ -28,17 +31,17 @@ def sinkhorn(K: np.ndarray, a: np.ndarray, b: np.ndarray, precision: float = 1e-
 
 
 if __name__ == "__main__":
-    a = np.array([0.5, 0.2, 0.3])
+    a = np.array([0.5, 0.2, 0.2, 0.1])
     b = np.array([0.1, 0.3, 0.6])
 
     C = np.array([
-        np.array([1, 2, 0.3]),
-        np.array([3, np.pi, 3]),
-        np.array([1, 0, 4])
+        [0.1, 0.2, 0.3],
+        [0.3, np.pi/4, 0.3],
+        [1, 0.2, 0.4],
+        [0.2, 0.4, 0.5]
     ])
 
-    gamma = 0.3
-
+    gamma = 2
     K = np.exp(C / gamma)
 
     res = sinkhorn(K, a, b)
