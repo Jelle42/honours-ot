@@ -1,6 +1,6 @@
 import numpy as np
 
-def sinkhorn(K: np.ndarray, a: np.ndarray, b: np.ndarray, precision: float = 1e-3) -> tuple[np.ndarray, int]:
+def sinkhorn(K: np.ndarray, a: np.ndarray, b: np.ndarray, precision: float = 1e-4) -> tuple[np.ndarray, int]:
     '''
     Computes OT matrix P by finding u and v st P = diag(u) K diag(v)
     '''
@@ -31,14 +31,18 @@ def sinkhorn(K: np.ndarray, a: np.ndarray, b: np.ndarray, precision: float = 1e-
 
 
 if __name__ == "__main__":
-    a = np.array([0.5, 0.2, 0.2, 0.1])
-    b = np.array([0.1, 0.3, 0.6])
+    np.set_printoptions(precision=6)
+    
+    a = np.array([0.4, 0.2, 0.2, 0.1, 0.05, 0.05])
+    b = np.array([0.1, 0.3, 0.4, 0.2])
 
     C = np.array([
-        [0.1, 0.2, 0.3],
-        [0.3, np.pi/4, 0.3],
-        [1, 0.2, 0.4],
-        [0.2, 0.4, 0.5]
+        [0.1, 0.2, 0.3, 1],
+        [0.3, np.pi/4, 0.3, 1],
+        [1, 0.2, 0.4, 1],
+        [0.2, 0.4, 0.5, 1],
+        [1, 1, 1, 1],
+        [0, 2, 4, 10]
     ])
 
     gamma = 2
