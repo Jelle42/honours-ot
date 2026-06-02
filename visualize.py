@@ -1,10 +1,13 @@
-﻿import os
+﻿import io
+import os
 
 import numpy as np
 import plotly.graph_objects as go
+import imageio.v3 as iio
+from PIL import Image
 
 from sinkhorn import sinkhorn
-from geometry import *
+from geometry import generate_circle, generate_cube, generate_square, generate_sphere
 
 
 def compute_cost_matrix(source_points: np.ndarray, target_points: np.ndarray) -> np.ndarray:
@@ -37,6 +40,13 @@ def sample_transport_edges(
     flat = transport_plan.ravel()
     indices = np.random.choice(len(flat), size=num_particles, p=flat)
     return np.unravel_index(indices, transport_plan.shape)
+
+def _write_html_output(fig: go.Figure, output_file: str | None, iterations: int) -> str | None:
+    if output_file is None:
+        return None
+    fig.write_html(output_file)
+    print(f"Saved animation to {output_file} (Sinkhorn iterations: {iterations})")
+    return output_file
 
 
 def build_transport_frames(
@@ -117,6 +127,7 @@ def build_figure2d(
         name="Particles",
     )
 
+    stacked = np.vstack([source_points, target_points])
     fig = go.Figure(data=[source_cloud, target_cloud, particle_scatter], frames=frames)
     fig.update_layout(
         updatemenus=[
@@ -129,7 +140,7 @@ def build_figure2d(
                         args=[
                             None,
                             dict(
-                                frame=dict(duration=50, redraw=True),
+                                frame=dict(duration=50, redraw=False),
                                 transition=dict(duration=0),
                                 fromcurrent=True,
                             ),
@@ -138,17 +149,11 @@ def build_figure2d(
                 ],
             )
         ],
-    )
-    
-
-    all_points = np.vstack([source_points, target_points])
-    xmin, ymin = all_points.min(axis=0)
-    xmax, ymax = all_points.max(axis=0)
-    fig.update_layout(
-        xaxis=dict(range=[xmin, xmax]),
-        yaxis=dict(range=[ymin, ymax], scaleanchor="x", scaleratio=1),
+        xaxis=dict(range=[stacked[:, 0].min(), stacked[:, 0].max()]),
+        yaxis=dict(range=[stacked[:, 1].min(), stacked[:, 1].max()], scaleanchor="x", scaleratio=1),
     )
     return fig
+
 
 def build_figure3d(
     source_points: np.ndarray,
@@ -184,6 +189,7 @@ def build_figure3d(
         name="Particles",
     )
 
+    stacked = np.vstack([source_points, target_points])
     fig = go.Figure(data=[source_cloud, target_cloud, particle_scatter], frames=frames)
     fig.update_layout(
         updatemenus=[
@@ -196,7 +202,7 @@ def build_figure3d(
                         args=[
                             None,
                             dict(
-                                frame=dict(duration=50, redraw=True),
+                                frame=dict(duration=50, redraw=False),
                                 transition=dict(duration=0),
                                 fromcurrent=True,
                             ),
@@ -205,21 +211,15 @@ def build_figure3d(
                 ],
             )
         ],
-    )
-    
-
-    all_points = np.vstack([source_points, target_points])
-    xmin, ymin, zmin = all_points.min(axis=0)
-    xmax, ymax, zmax = all_points.max(axis=0)
-    fig.update_layout(
         scene=dict(
-            xaxis=dict(range=[xmin, xmax]),
-            yaxis=dict(range=[ymin, ymax]),
-            zaxis=dict(range=[zmin, zmax]),
+            xaxis=dict(range=[stacked[:, 0].min(), stacked[:, 0].max()]),
+            yaxis=dict(range=[stacked[:, 1].min(), stacked[:, 1].max()]),
+            zaxis=dict(range=[stacked[:, 2].min(), stacked[:, 2].max()]),
             aspectmode="data",
-        )
+        ),
     )
     return fig
+
 
 def visualize2d(
     source_mass: np.ndarray,
@@ -259,12 +259,13 @@ def visualize2d(
 
     if output_file is None:
         output_file = os.path.join(os.path.dirname(__file__), "ot_animation_2d.html")
-    fig.write_html(output_file)
+    _write_html_output(fig, output_file, iterations)
+
+
     if show_plot:
         fig.show()
 
-    print(f"Saved animation to {output_file} (Sinkhorn iterations: {iterations})")
-    
+
 def visualize3d(
     source_mass: np.ndarray,
     target_mass: np.ndarray,
@@ -302,38 +303,30 @@ def visualize3d(
     fig = build_figure3d(source_points, target_points, frames, starts)
 
     if output_file is None:
-        output_file = os.path.join(os.path.dirname(__file__), "ot_animation3d.html")
-    fig.write_html(output_file)
+        output_file = os.path.join(os.path.dirname(__file__), "ot_animation_3d.html")
+    _write_html_output(fig, output_file, iterations)
+
     if show_plot:
         fig.show()
 
-    print(f"Saved animation to {output_file} (Sinkhorn iterations: {iterations})")
-
 
 if __name__ == "__main__":
+    file_path = os.path.dirname(__file__)
+    
     n = 1000
-    circle_points = generate_circle(1.0, n)
-    circle_weights = np.full(n, 1.0 / n)
     sphere_points = generate_sphere(1.0, n)
     sphere_weights = np.full(n, 1.0 / n)
 
     m = 1100
-    square_points = generate_square(1.0, m)
-    square_weights = np.full(m, 1.0 / m)
     cube_points = generate_cube(1.0, m)
     cube_weights = np.full(m, 1.0 / m)
 
-    # visualize2d(
-    #     source_mass=square_weights,
-    #     target_mass=circle_weights,
-    #     source_points=square_points,
-    #     target_points=circle_points,
-    #     gamma=0.2,
-    # )
     visualize3d(
         source_mass=cube_weights,
         target_mass=sphere_weights,
         source_points=cube_points,
         target_points=sphere_points,
-        gamma=0.2
+        gamma=0.2,
+        show_plot=False,
+        output_file=file_path + "/ot_animation_3d.html"
     )

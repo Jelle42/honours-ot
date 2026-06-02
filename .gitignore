@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# dont push output files
+*.html
+*.gif
+
 # C extensions
 *.so
 
