@@ -115,6 +115,7 @@ def build_transport_frames(
     starts: np.ndarray,
     ends: np.ndarray,
     num_frames: int,
+    dot_size: float,
 ) -> list[go.Frame]:
     """Build Plotly animation frames for the particle transport in 2D."""
     return [
@@ -124,7 +125,7 @@ def build_transport_frames(
                     x=((1 - t) * starts + t * ends)[:, 0],
                     y=((1 - t) * starts + t * ends)[:, 1],
                     mode="markers",
-                    marker=dict(size=2),
+                    marker=dict(size=dot_size),
                 )
             ],
             name=str(frame_index),
@@ -138,6 +139,7 @@ def build_transport_frames3d(
     starts: np.ndarray,
     ends: np.ndarray,
     num_frames: int,
+    dot_size: float,
 ) -> list[go.Frame]:
     """Build Plotly animation frames for the particle transport in 3D."""
     return [
@@ -148,7 +150,7 @@ def build_transport_frames3d(
                     y=((1 - t) * starts + t * ends)[:, 1],
                     z=((1 - t) * starts + t * ends)[:, 2],
                     mode="markers",
-                    marker=dict(size=0.5),
+                    marker=dict(size=dot_size),
                 )
             ],
             name=str(frame_index),
@@ -163,6 +165,7 @@ def build_figure2d(
     target_points: np.ndarray,
     frames: list[go.Frame],
     particle_positions: np.ndarray,
+    dot_size: float = 3
 ) -> go.Figure:
     """Construct the Plotly figure with source/target clouds and particle frames."""
     source_cloud = go.Scatter(
@@ -177,7 +180,7 @@ def build_figure2d(
         x=target_points[:, 0],
         y=target_points[:, 1],
         mode="markers",
-        marker=dict(size=3),
+        marker=dict(size=dot_size),
         opacity=0.067,
         name="Target",
     )
@@ -185,7 +188,7 @@ def build_figure2d(
         x=particle_positions[:, 0],
         y=particle_positions[:, 1],
         mode="markers",
-        marker=dict(size=2),
+        marker=dict(size=dot_size),
         name="Particles",
     )
 
@@ -222,6 +225,7 @@ def build_figure3d(
     target_points: np.ndarray,
     frames: list[go.Frame],
     particle_positions: np.ndarray,
+    dot_size: float = 3
 ) -> go.Figure:
     """Construct the Plotly figure with source/target clouds and particle frames."""
     source_cloud = go.Scatter3d(
@@ -229,7 +233,7 @@ def build_figure3d(
         y=source_points[:, 1],
         z=source_points[:, 2],
         mode="markers",
-        marker=dict(size=3),
+        marker=dict(size=dot_size),
         opacity=0.067,
         name="Source",
     )
@@ -238,7 +242,7 @@ def build_figure3d(
         y=target_points[:, 1],
         z=target_points[:, 2],
         mode="markers",
-        marker=dict(size=3),
+        marker=dict(size=dot_size),
         opacity=0.067,
         name="Target",
     )
@@ -247,7 +251,7 @@ def build_figure3d(
         y=particle_positions[:, 1],
         z=particle_positions[:, 2],
         mode="markers",
-        marker=dict(size=2),
+        marker=dict(size=dot_size),
         name="Particles",
     )
 
@@ -289,6 +293,7 @@ def visualize2d(
     source_points: np.ndarray,
     target_points: np.ndarray,
     gamma: float,
+    dot_size: float = 3,
     num_particles: int = 1_000,
     num_frames: int = 120,
     output_file: str | None = None,
@@ -323,12 +328,11 @@ def visualize2d(
     row_indices, col_indices = sample_transport_edges(transport_plan, num_particles)
     starts = source_points[row_indices]
     ends = target_points[col_indices]
-    frames = build_transport_frames(starts, ends, num_frames)
-    fig = build_figure2d(source_points, target_points, frames, starts)
+    frames = build_transport_frames(starts, ends, num_frames, dot_size)
+    fig = build_figure2d(source_points, target_points, frames, starts, dot_size)
 
-    if output_file is None:
-        output_file = os.path.join(os.path.dirname(__file__), "ot_animation_2d.html")
-    _write_html_output(fig, output_file, iterations)
+    if output_file is not None:
+        _write_html_output(fig, output_file, iterations)
 
     if video_output is not None:
         figure_to_video(fig, video_output, fps=video_fps)
@@ -343,6 +347,7 @@ def visualize3d(
     source_points: np.ndarray,
     target_points: np.ndarray,
     gamma: float,
+    dot_size: float,
     num_particles: int = 1_000,
     num_frames: int = 120,
     output_file: str | None = None,
@@ -377,8 +382,8 @@ def visualize3d(
     row_indices, col_indices = sample_transport_edges(transport_plan, num_particles)
     starts = source_points[row_indices]
     ends = target_points[col_indices]
-    frames = build_transport_frames3d(starts, ends, num_frames)
-    fig = build_figure3d(source_points, target_points, frames, starts)
+    frames = build_transport_frames3d(starts, ends, num_frames, dot_size)
+    fig = build_figure3d(source_points, target_points, frames, starts, dot_size)
 
     if output_file is None:
         output_file = os.path.join(os.path.dirname(__file__), "ot_animation_3d.html")
@@ -409,19 +414,22 @@ if __name__ == "__main__":
     
     square_points = generate_ball(1.0, m, 2, float("inf"))
     square_weights = np.full(m, 1.0 / m)
+    
+    torus_points = generate_torus(1, 1, m)
+    torus_weights = np.full(m, 1.0 / m)
 
     print(f"Generating Shapes took {(time.time() - start):.4f} seconds")
 
     visualize3d(
-        source_mass=cube_weights,
+        source_mass=torus_weights,
         target_mass=sphere_weights,
-        source_points=cube_points,
+        source_points=torus_points,
         target_points=sphere_points,
         gamma=0.2,
+        dot_size=3,
         show_plot=False,
         num_frames=60,
         num_particles=2000,
-        output_file=file_path + "/ot_animation_3d.html",
         video_output=file_path + "/ot_animation_3d.gif"
     )
     
