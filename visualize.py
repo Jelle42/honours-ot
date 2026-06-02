@@ -1,13 +1,75 @@
-﻿import io
-import os
-
+﻿import os
 import numpy as np
 import plotly.graph_objects as go
-import imageio.v3 as iio
-from PIL import Image
+import imageio.v2 as imageio
+import kaleido
+from pathlib import Path
 
 from sinkhorn import sinkhorn
-from geometry import generate_circle, generate_cube, generate_square, generate_sphere
+from geometry import *
+
+def figure_to_video(
+    fig: go.Figure,
+    output_file: str,
+    fps: int = 60,
+    width: int = 1000,
+    height: int = 800,
+) -> str:
+    """
+    Convert a Plotly figure with frames to a video file (MP4 or GIF).
+    
+    Args:
+        fig: Plotly figure with animation frames
+        output_file: Output path (must end with .mp4 or .gif)
+        fps: Frames per second
+        width: Video width in pixels
+        height: Video height in pixels
+    
+    Returns:
+        Path to output file
+    """
+    if kaleido is None:
+        raise ImportError(
+            "kaleido is required for video export. Install with: pip install kaleido"
+        )
+    
+    if not fig.frames:
+        raise ValueError("Figure has no animation frames")
+    
+    file_ext = Path(output_file).suffix.lower()
+    if file_ext not in [".mp4", ".gif"]:
+        raise ValueError("output_file must end with .mp4 or .gif")
+    
+    # Render each frame as an image
+    frames_images = []
+    
+    # Initial frame
+    img = fig.to_image(format="png", width=width, height=height)
+    frames_images.append(imageio.imread(img))
+    
+    # Animation frames
+    for frame_data in fig.frames:
+        fig_copy = go.Figure(fig)
+        if frame_data.data:
+            trace_indices = list(frame_data.traces) if frame_data.traces is not None else list(range(len(frame_data.data)))
+            for trace_idx, trace_data in zip(trace_indices, frame_data.data):
+                if trace_idx < len(fig_copy.data):
+                    fig_copy.data[trace_idx].update(trace_data)
+
+        if frame_data.layout is not None:
+            fig_copy.layout.update(frame_data.layout)
+
+        img = fig_copy.to_image(format="png", width=width, height=height, engine="kaleido")
+        frames_images.append(imageio.imread(img))
+    
+    # Write to file
+    if file_ext == ".gif":
+        imageio.mimwrite(output_file, frames_images, duration=20 / fps, loop=0)
+    else:  # .mp4
+        imageio.mimwrite(output_file, frames_images, fps=fps)
+    
+    print(f"Video saved to {output_file}")
+    return output_file
 
 
 def compute_cost_matrix(source_points: np.ndarray, target_points: np.ndarray) -> np.ndarray:
@@ -86,7 +148,7 @@ def build_transport_frames3d(
                     y=((1 - t) * starts + t * ends)[:, 1],
                     z=((1 - t) * starts + t * ends)[:, 2],
                     mode="markers",
-                    marker=dict(size=2),
+                    marker=dict(size=0.5),
                 )
             ],
             name=str(frame_index),
@@ -108,7 +170,7 @@ def build_figure2d(
         y=source_points[:, 1],
         mode="markers",
         marker=dict(size=3),
-        opacity=0.67,
+        opacity=0.067,
         name="Source",
     )
     target_cloud = go.Scatter(
@@ -116,7 +178,7 @@ def build_figure2d(
         y=target_points[:, 1],
         mode="markers",
         marker=dict(size=3),
-        opacity=0.67,
+        opacity=0.067,
         name="Target",
     )
     particle_scatter = go.Scatter(
@@ -168,7 +230,7 @@ def build_figure3d(
         z=source_points[:, 2],
         mode="markers",
         marker=dict(size=3),
-        opacity=0.67,
+        opacity=0.067,
         name="Source",
     )
     target_cloud = go.Scatter3d(
@@ -177,7 +239,7 @@ def build_figure3d(
         z=target_points[:, 2],
         mode="markers",
         marker=dict(size=3),
-        opacity=0.67,
+        opacity=0.067,
         name="Target",
     )
     particle_scatter = go.Scatter3d(
@@ -231,8 +293,15 @@ def visualize2d(
     num_frames: int = 120,
     output_file: str | None = None,
     show_plot: bool = True,
+    video_output: str | None = None,
+    video_fps: int = 24,
 ) -> None:
-    """Visualize optimal transport between two 2D discrete measures."""
+    """Visualize optimal transport between two 2D discrete measures.
+    
+    Args:
+        video_output: If provided, export to video file (.mp4 or .gif)
+        video_fps: Frames per second for video export
+    """
     assert source_points.shape[1] == target_points.shape[1] == 2, (
         "visualize2d requires 2D points for both source and target."
     )
@@ -261,6 +330,8 @@ def visualize2d(
         output_file = os.path.join(os.path.dirname(__file__), "ot_animation_2d.html")
     _write_html_output(fig, output_file, iterations)
 
+    if video_output is not None:
+        figure_to_video(fig, video_output, fps=video_fps)
 
     if show_plot:
         fig.show()
@@ -276,8 +347,15 @@ def visualize3d(
     num_frames: int = 120,
     output_file: str | None = None,
     show_plot: bool = True,
+    video_output: str | None = None,
+    video_fps: int = 24,
 ) -> None:
-    """Visualize optimal transport between two 3D discrete measures."""
+    """Visualize optimal transport between two 3D discrete measures.
+    
+    Args:
+        video_output: If provided, export to video file (.mp4 or .gif)
+        video_fps: Frames per second for video export
+    """
     assert source_points.shape[1] == target_points.shape[1] == 3, (
         "visualize3d requires 3D points for both source and target."
     )
@@ -306,20 +384,33 @@ def visualize3d(
         output_file = os.path.join(os.path.dirname(__file__), "ot_animation_3d.html")
     _write_html_output(fig, output_file, iterations)
 
+    if video_output is not None:
+        figure_to_video(fig, video_output, fps=video_fps)
+
     if show_plot:
         fig.show()
 
 
 if __name__ == "__main__":
     file_path = os.path.dirname(__file__)
+    import time
+    start = time.time()
     
-    n = 1000
-    sphere_points = generate_sphere(1.0, n)
+    n = 1500
+    sphere_points = generate_ball(1.0, n, 3, 2)
     sphere_weights = np.full(n, 1.0 / n)
+    
+    circle_points = generate_ball(1.0, n, 2, 2)
+    circle_weights = np.full(n, 1.0 / n)
 
-    m = 1100
-    cube_points = generate_cube(1.0, m)
+    m = 1700
+    cube_points = generate_ball(1.0, m, 3, float("inf"))
     cube_weights = np.full(m, 1.0 / m)
+    
+    square_points = generate_ball(1.0, m, 2, float("inf"))
+    square_weights = np.full(m, 1.0 / m)
+
+    print(f"Generating Shapes took {(time.time() - start):.4f} seconds")
 
     visualize3d(
         source_mass=cube_weights,
@@ -328,5 +419,10 @@ if __name__ == "__main__":
         target_points=sphere_points,
         gamma=0.2,
         show_plot=False,
-        output_file=file_path + "/ot_animation_3d.html"
+        num_frames=60,
+        num_particles=2000,
+        output_file=file_path + "/ot_animation_3d.html",
+        video_output=file_path + "/ot_animation_3d.gif"
     )
+    
+    print(f"Rendering took {(time.time() - start):.4f} seconds")
