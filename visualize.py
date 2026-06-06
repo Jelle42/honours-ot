@@ -434,15 +434,37 @@ if __name__ == "__main__":
         )
     triangle_weights = np.full(m, 1.0 / m)
     
+    phi = 0.5 + np.sqrt(5)/2
+    dodecahedron_points = rotate(generate_polygon(
+        np.sqrt(2 / (5 + np.sqrt(5)))*np.array([
+            [0, 1, phi],
+            [0, 1, -phi],
+            [0, -1, phi],
+            [0, -1, -phi],
+            [1, phi, 0],
+            [1, -phi, 0],
+            [-1, phi, 0],
+            [-1, -phi, 0],
+            [phi, 0, 1],
+            [phi, 0, -1],
+            [-phi, 0, 1],
+            [-phi, 0, -1]
+        ]),
+        np.array([1]*12),
+        m
+    ), np.pi/8)
+    dodecahedron_weights = np.full(m, 1.0 / m)
+    
+    
     print(f"Generating Shapes took {(time.time() - start):.4f} seconds")
     start = time.time()
     
 
-    visualize2d(
-        source_mass=square_weights,
-        target_mass=triangle_weights,
-        source_points=square_points,
-        target_points=triangle_points,
+    visualize3d(
+        source_mass=sphere_weights,
+        target_mass=dodecahedron_weights,
+        source_points=sphere_points,
+        target_points=dodecahedron_points,
         gamma=0.2,
         dot_size=3,
         show_plot=False,
