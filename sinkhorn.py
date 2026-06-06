@@ -1,6 +1,6 @@
 import numpy as np
 
-def sinkhorn(kernel: np.ndarray, source_mass: np.ndarray, target_mass: np.ndarray, tolerance: float = 1e-6, eps: float = 1e-12) -> tuple[np.ndarray, int]:
+def sinkhorn(kernel: np.ndarray, source_mass: np.ndarray, target_mass: np.ndarray, tolerance: float = 1e-9, eps: float = 1e-12) -> tuple[np.ndarray, int]:
     '''
     Computes OT matrix P by finding u and v so that P = diag(u) K diag(v)
     '''
@@ -17,17 +17,20 @@ def sinkhorn(kernel: np.ndarray, source_mass: np.ndarray, target_mass: np.ndarra
 
     iteration = 0
     while True:
-        previous_col_scaling = col_scaling
-        previous_row_scaling = row_scaling
         row_scaling = source_mass / (kernel @ col_scaling)
         col_scaling = target_mass / (kernel.T @ row_scaling)
 
         iteration += 1
+        
+        transport = np.diag(row_scaling) @ kernel @ np.diag(col_scaling)
+        
+        row_err = np.max(np.abs(np.sum(transport, 1) - source_mass))
+        col_err = np.max(np.abs(np.sum(transport, 0) - target_mass))
 
-        if np.linalg.norm(previous_col_scaling - col_scaling) + np.linalg.norm(previous_row_scaling - row_scaling) < tolerance:
+        if row_err < tolerance and col_err < tolerance:
             break
 
-    transport = np.diag(row_scaling) @ kernel @ np.diag(col_scaling)
+    # print(f"sinkhorn iter: {iteration}")
     
     return transport, iteration
 
