@@ -385,9 +385,8 @@ def visualize3d(
     frames = build_transport_frames3d(starts, ends, num_frames, dot_size)
     fig = build_figure3d(source_points, target_points, frames, starts, dot_size)
 
-    if output_file is None:
-        output_file = os.path.join(os.path.dirname(__file__), "ot_animation_3d.html")
-    _write_html_output(fig, output_file, iterations)
+    if output_file is not None:
+        _write_html_output(fig, output_file, iterations)
 
     if video_output is not None:
         figure_to_video(fig, video_output, fps=video_fps)
@@ -431,7 +430,7 @@ if __name__ == "__main__":
         show_plot=False,
         num_frames=60,
         num_particles=2000,
-        video_output=file_path + "/ot_animation_3d.gif"
+        video_output=file_path + f"/animations/ot_animation_3d_{np.floor(10_000*np.random.random())}.gif"
     )
     
     print(f"Rendering took {(time.time() - start):.4f} seconds")
