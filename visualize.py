@@ -414,26 +414,41 @@ if __name__ == "__main__":
     square_points = generate_ball(1.0, m, 2, float("inf"))
     square_weights = np.full(m, 1.0 / m)
     
+    square2_points = rotate(generate_ball(1.0, m, 2, float("inf")), np.pi/4)
+    square2_weights = np.full(m, 1.0 / m)
+    
     torus_points = generate_torus(0.5, 1, m)
     torus_weights = np.full(m, 1.0 / m)
     
     torus2_points = rotate(generate_torus(0.5, 1, m), 0, np.pi/2, np.pi/2)
     torus2_weights = np.full(m, 1.0 / m)
-
+    
+    triangle_points = generate_polygon(
+        np.array([
+            [0,-1],
+            [2,1],
+            [-2,1],
+        ]),
+        np.array([0.5,2,2]),
+        m
+        )
+    triangle_weights = np.full(m, 1.0 / m)
+    
     print(f"Generating Shapes took {(time.time() - start):.4f} seconds")
     start = time.time()
+    
 
-    visualize3d(
-        source_mass=torus_weights,
-        target_mass=torus2_weights,
-        source_points=torus_points,
-        target_points=torus2_points,
+    visualize2d(
+        source_mass=square_weights,
+        target_mass=triangle_weights,
+        source_points=square_points,
+        target_points=triangle_points,
         gamma=0.2,
         dot_size=3,
         show_plot=False,
         num_frames=60,
         num_particles=2000,
-        video_output=file_path + f"/animations/ot_animation_3d_{10_000*np.random.random():.0f}.gif"
+        video_output=file_path + f"/animations/ot_animation_2d_{10_000*np.random.random():.0f}.gif"
     )
     
     print(f"Rendering took {(time.time() - start):.4f} seconds")

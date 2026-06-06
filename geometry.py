@@ -19,7 +19,37 @@ def generate_torus(inner_radius: float, outer_radius: float, n: int,) -> np.ndar
     z = inner_radius*np.cos(theta)
     
     points = np.stack([x, y, z], axis=0).T
-    print(points.shape)
+    return points
+
+def generate_polygon(A: np.ndarray, b: np.ndarray, n: int) -> np.ndarray:
+    '''generate :n: points x s.t. Ax <= b and each point lies on at least one tight constraint.
+    note that the 0 vector should not be tight, but should be feasible.'''
+    dim = A.shape[1]
+    if A.shape[0] != b.shape[0]: raise ValueError("Dimension mismatch between A and b")
+    rng = np.random.default_rng()
+    if np.any(A @ np.zeros(dim) > b):
+        raise ValueError("generate_polygon requires the origin to be feasible (0 satisfies Ax <= b)")
+    if np.any(b == 0):
+        raise ValueError("Origin should not have active constraints")
+    
+    points = np.zeros((n, dim))
+    count = 0
+    while count < n:
+        direction = rng.normal(size=(dim,))
+        norm = np.linalg.norm(direction)
+        if norm == 0:
+            continue
+        direction /= norm
+
+        res = A @ direction
+        positive = res > 0
+        if not np.any(positive):
+            continue
+
+        max_scalar = np.min(b[positive] / res[positive])
+        points[count] = max_scalar * direction
+        count += 1
+
     return points
 
 def rotate(points: np.ndarray, yaw: float, pitch: float = 0.0, roll: float = 0.0):
@@ -44,5 +74,10 @@ def rotate(points: np.ndarray, yaw: float, pitch: float = 0.0, roll: float = 0.0
 __all__ = [
     "generate_ball",
     "generate_torus",
+    "generate_polygon",
     "rotate",
 ]
+
+
+if __name__ == "__main__":
+    pass
