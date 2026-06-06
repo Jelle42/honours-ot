@@ -51,7 +51,7 @@ if __name__ == "__main__":
     ])
 
     gamma = 2
-    K = np.exp(C / gamma)
+    K = np.exp(-C / gamma)
 
     P, i = sinkhorn(K, a, b)
     print(P)
