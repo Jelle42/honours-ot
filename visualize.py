@@ -59,7 +59,7 @@ def figure_to_video(
         if frame_data.layout is not None:
             fig_copy.layout.update(frame_data.layout)
 
-        img = fig_copy.to_image(format="png", width=width, height=height, engine="kaleido")
+        img = fig_copy.to_image(format="png", width=width, height=height)
         frames_images.append(imageio.imread(img))
     
     # Write to file
@@ -415,10 +415,11 @@ if __name__ == "__main__":
     square_points = generate_ball(1.0, m, 2, float("inf"))
     square_weights = np.full(m, 1.0 / m)
     
-    torus_points = generate_torus(1, 1, m)
+    torus_points = rotate(generate_torus(1, 2, m), np.pi/2, np.pi/8, np.pi/5)
     torus_weights = np.full(m, 1.0 / m)
 
     print(f"Generating Shapes took {(time.time() - start):.4f} seconds")
+    start = time.time()
 
     visualize3d(
         source_mass=torus_weights,

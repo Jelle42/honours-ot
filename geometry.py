@@ -22,7 +22,27 @@ def generate_torus(inner_radius: float, outer_radius: float, n: int,) -> np.ndar
     print(points.shape)
     return points
 
+def rotate(points: np.ndarray, yaw: float, pitch: float = 0.0, roll: float = 0.0):
+    '''Rotate :points: among z-axis with :yaw:, among y-axis with :pitch: and among x-axis with :roll:'''
+    n = points.shape[1]
+    if n == 2:
+        A = np.array([
+            [np.cos(yaw), -np.sin(yaw)],
+            [np.sin(yaw), np.cos(yaw)]
+        ])
+    elif n == 3:
+        A = np.array([
+            [np.cos(yaw)*np.sin(pitch), np.cos(yaw)*np.sin(pitch)*np.sin(roll) - np.sin(yaw)*np.cos(roll), np.cos(yaw)*np.sin(pitch)*np.cos(roll) + np.sin(yaw)*np.sin(roll)],
+            [np.sin(yaw)*np.cos(pitch), np.cos(yaw)*np.sin(pitch)*np.sin(roll) + np.sin(yaw)*np.cos(roll), np.cos(yaw)*np.sin(pitch)*np.cos(roll) - np.sin(yaw)*np.sin(roll)],
+            [-np.sin(pitch), np.cos(pitch)*np.sin(roll), np.cos(pitch)*np.cos(roll)]
+        ])
+    else:
+        raise ValueError("Points should be either 2 or 3 dimensional")
+
+    return points @ A.T
+
 __all__ = [
     "generate_ball",
     "generate_torus",
+    "rotate",
 ]
