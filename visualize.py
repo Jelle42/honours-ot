@@ -281,7 +281,7 @@ def build_figure3d(
             xaxis=dict(range=[stacked[:, 0].min(), stacked[:, 0].max()]),
             yaxis=dict(range=[stacked[:, 1].min(), stacked[:, 1].max()]),
             zaxis=dict(range=[stacked[:, 2].min(), stacked[:, 2].max()]),
-            aspectmode="data",
+            aspectmode="cube",
         ),
     )
     return fig
@@ -414,23 +414,26 @@ if __name__ == "__main__":
     square_points = generate_ball(1.0, m, 2, float("inf"))
     square_weights = np.full(m, 1.0 / m)
     
-    torus_points = rotate(generate_torus(1, 2, m), np.pi/2, np.pi/8, np.pi/5)
+    torus_points = generate_torus(0.5, 1, m)
     torus_weights = np.full(m, 1.0 / m)
+    
+    torus2_points = rotate(generate_torus(0.5, 1, m), 0, np.pi/2, np.pi/2)
+    torus2_weights = np.full(m, 1.0 / m)
 
     print(f"Generating Shapes took {(time.time() - start):.4f} seconds")
     start = time.time()
 
     visualize3d(
         source_mass=torus_weights,
-        target_mass=sphere_weights,
+        target_mass=torus2_weights,
         source_points=torus_points,
-        target_points=sphere_points,
+        target_points=torus2_points,
         gamma=0.2,
         dot_size=3,
         show_plot=False,
         num_frames=60,
         num_particles=2000,
-        video_output=file_path + f"/animations/ot_animation_3d_{np.floor(10_000*np.random.random())}.gif"
+        video_output=file_path + f"/animations/ot_animation_3d_{10_000*np.random.random():.0f}.gif"
     )
     
     print(f"Rendering took {(time.time() - start):.4f} seconds")
