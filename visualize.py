@@ -49,6 +49,7 @@ def figure_to_video(
     
     # Animation frames
     for frame_data in fig.frames:
+        assert isinstance(frame_data, go.Frame)
         fig_copy = go.Figure(fig)
         if frame_data.data:
             trace_indices = list(frame_data.traces) if frame_data.traces is not None else list(range(len(frame_data.data)))
@@ -97,7 +98,7 @@ def compute_transport_plan(
 def sample_transport_edges(
     transport_plan: np.ndarray,
     num_particles: int,
-) -> tuple[np.ndarray, np.ndarray]:
+) -> tuple[np.ndarray, ...]:
     """Sample particle transports from the transport plan."""
     flat = transport_plan.ravel()
     indices = np.random.choice(len(flat), size=num_particles, p=flat)
@@ -452,7 +453,7 @@ if __name__ == "__main__":
         ]),
         np.array([1]*12),
         m
-    ), np.pi/8)
+    ), np.pi/4)
     dodecahedron_weights = np.full(m, 1.0 / m)
     
     
@@ -470,7 +471,7 @@ if __name__ == "__main__":
         show_plot=False,
         num_frames=60,
         num_particles=2000,
-        video_output=file_path + f"/animations/ot_animation_2d_{10_000*np.random.random():.0f}.gif"
+        video_output=file_path + f"/animations/ot_animation_3d_{10_000*np.random.random():.0f}.gif"
     )
     
     print(f"Rendering took {(time.time() - start):.4f} seconds")
